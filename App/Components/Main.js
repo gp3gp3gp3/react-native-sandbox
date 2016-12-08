@@ -1,11 +1,13 @@
 import React, { Component } from 'react'
+import api from '../Utils/api'
+import Dashboard from './Dashboard'
 import {
   View,
   Text,
   StyleSheet,
   TextInput,
   TouchableHighlight,
-  ActivityIndicatorIOS
+  ActivityIndicator
 } from 'react-native'
 
 class Main extends Component {
@@ -17,6 +19,7 @@ class Main extends Component {
       error: false
     }
     this.handleChange = this.handleChange.bind(this)
+    this.handleSubmit = this.handleSubmit.bind(this)
   }
 
   handleChange (event) {
@@ -26,16 +29,35 @@ class Main extends Component {
   }
 
   handleSubmit () {
-    // update our indicatorIOS spinner
     this.setState({
       isLoading: true
     })
-    console.log('SUBMIT', this.state.username)
-    // fetch data from github
-    // reroute to the next passing that github information
+    api.getBio(this.state.username)
+    .then(res => {
+      if (res.message === 'Not Found') {
+        this.setState({
+          error: 'User not found',
+          isLoading: false
+        })
+      } else {
+        this.props.navigator.push({
+          title: res.name || "Select an Option",
+          component: Dashboard,
+          passProps: {userInfo: res}
+        })
+        this.setState({
+          isLoading: false,
+          error: false,
+          username: ''
+        })
+      }
+    })
   }
 
   render () {
+    let showErr = (
+      this.state.error ? <Text> {this.state.error} </Text> : <View></View>
+    )
     return (
       <View style={styles.mainContainer}>
         <Text style={styles.title}> Seach for a Github User </Text>
@@ -51,6 +73,12 @@ class Main extends Component {
         >
           <Text style={styles.buttonText}> SEARCH </Text>
         </TouchableHighlight>
+        <ActivityIndicator
+          animating={this.state.isLoading}
+          color="#111"
+          size="large"
+        ></ActivityIndicator>
+        {showErr}
       </View>
     )
   }
